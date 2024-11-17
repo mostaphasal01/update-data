@@ -29,155 +29,357 @@ def update_date_input():
 
 def submit_form():
     try:
-        # Benutzereingabe für Username, Passwort und IDs
+        # Benutzereingabe für Username, Passwort und Marktnummer
         username = username_entry.get()
         password = password_entry.get()
-        id_list = [entry.get() for entry in id_entries]
+        marktnummern = [entry.get() for entry in marktnummern_entries]
 
-        # Vollständiger Pfad zum Chromedriver eingeben
-        chrome_driver_path = 'path/to/chromedriver.exe'
+        # Pfad zum Chromedriver (Platzhalter verwenden)
+        chrome_driver_path = 'CHROMEDRIVER_PATH'
 
         # Chrome-Optionen erstellen
         chrome_options = webdriver.ChromeOptions()
+        # chrome_options.add_argument("--headless")  # Chrome im Hintergrund ausführen
 
         # Service-Objekt initialisieren
         service_object = Service(chrome_driver_path)
 
-        # Chrome-Treiber initialisieren
+        # Chrome-Treiber initialisieren mit den Chrome-Optionen
         driver = webdriver.Chrome(service=service_object, options=chrome_options)
         sleep(1)
 
-        # Webseite aufrufen
-        driver.get('https://example.com')
+        # Webseite aufrufen (Platzhalter verwenden)
+        driver.get('LOGIN_PAGE_URL')
 
-        # Login
-        username_field = driver.find_element(By.NAME, 'benutzer')
-        username_field.send_keys(username)
-        password_field = driver.find_element(By.NAME, 'passwort')
-        password_field.send_keys(password)
-        login_button = driver.find_element(By.NAME, 'anmelden')
-        login_button.click()
+        # Browser für 1 Sekunden offen halten
         sleep(1)
 
-        # Login-Erfolgsüberprüfung
-        try:
-            driver.find_element(By.XPATH, '//label[text()="Systemtyp"]')
-        except NoSuchElementException:
-            raise Exception("Login fehlgeschlagen")
+        # Einloggen
+        username_bar = driver.find_element(By.NAME, 'USERNAME_FIELD')
+        username_bar.send_keys(username)
 
-        for id_value in id_list:
-            if not id_value:
-                continue
+        password_bar = driver.find_element(By.NAME, 'PASSWORD_FIELD')  # Platzhalter verwenden
+        password_bar.send_keys(password)
+
+        # Button klicken
+        button = driver.find_element(By.NAME, 'LOGIN_BUTTON')
+        button.click()
+        sleep(1) 
+
+        # Überprüfung der erfolgreichen Anmeldung durch Suche nach einem Element
+        driver.find_element(By.XPATH, '//label[text()="LOGIN_CONFIRM_ELEMENT"]')
+
+        for marktnummer in marktnummern:
+            if not marktnummer:
+                continue  # Überspringt leere Marktnummern
 
             try:
-                # ID-Suche
-                search_bar = driver.find_element(By.ID, 'sucheFeld')
-                search_bar.send_keys(id_value)
+                # Marktnummer suchen
+                suche_bar = driver.find_element(By.ID, 'SEARCH_FIELD_ID')
+                suche_bar.send_keys(marktnummer)
                 sleep(1)
-                search_bar.send_keys(Keys.ENTER)
+                suche_bar.send_keys(Keys.ENTER)
                 sleep(1)
 
-                # Überprüfung des Schließungsdatums
+                # Datum der Schließung prüfen
                 try:
-                    closure_date_field = WebDriverWait(driver, 10).until(
-                        EC.visibility_of_element_located((By.ID, 'schlussDatum'))
-                    )
-                    closure_date_value = closure_date_field.get_attribute('value')
-                    if closure_date_value:
-                        print(f"Datum gefunden: {closure_date_value}")
-                        driver.quit()
-                        return
-                except NoSuchElementException:
+                    wait = WebDriverWait(driver, 10)
+                    schliessung_input = wait.until(EC.visibility_of_element_located((By.ID, 'CLOSURE_DATE_FIELD')))
+                    schliessung_wert = schliessung_input.get_attribute('value')
+
+                    if schliessung_wert:
+                        print(f"Datum gefunden: {schliessung_wert}")
+                        driver.quit()  # Schließt den Browser und beendet das Programm
+
+                except Exception:
                     pass
 
-                # Systemtyp aktualisieren
-                system_label = driver.find_element(By.XPATH, '//label[text()="Systemtyp"]')
+                # OS-Typ auswählen
+                element = driver.find_element(By.XPATH, '//label[text()="OS_TYPE_LABEL"]')
                 actions = ActionChains(driver)
-                actions.double_click(system_label).perform()
+                actions.double_click(element).perform()
                 sleep(1)
 
-                system_dropdown = driver.find_element(By.NAME, 'system_typ')
-                select_system = Select(system_dropdown)
-                select_system.select_by_visible_text('Neues System')
+                dropdown_menu = driver.find_element(By.NAME, 'DROPDOWN_FIELD')
+                sleep(1)
+                select_object = Select(dropdown_menu)
+                select_object.select_by_visible_text('OS_TYPE_OPTION')
                 sleep(1)
 
-                # Felder deaktivieren
+                # XXX deaktivieren
                 ActionChains(driver).send_keys(Keys.TAB * 5).perform()
-                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'feature1')))
-                driver.execute_script('document.querySelector(\'input[name="feature1"][type="checkbox"]\').checked = false;')
+                sleep(1)
+                driver.execute_script('document.querySelector(\'input[name="CIGARETTE_CARRIER_FIELD"][type="checkbox"]\').checked = false;')
                 sleep(1)
 
-                # Änderungen speichern
-                save_button = driver.find_element(By.ID, 'speichern')
-                save_button.click()
-                sleep(3)
+                # XXX deaktivieren
+                ActionChains(driver).send_keys(Keys.TAB * 2).perform()
+                sleep(1)
+                driver.execute_script('document.querySelector(\'input[name="LINDY_FIELD"][type="checkbox"]\').checked = false;')
+                sleep(1)
 
-                # Weitere Konfigurationsänderungen (z. B. Client, Monitor)
-                try:
-                    client_label = driver.find_element(By.XPATH, '//label[text()="Client"]')
-                    actions.double_click(client_label).perform()
-                    sleep(1)
-
-                    # Anzahl
-                    number_field = driver.find_element(By.ID, 'anzahl')
-                    current_value = int(number_field.get_attribute('value'))
-                    number_field.clear()
-                    number_field.send_keys(str(current_value + 1))
-                    sleep(1)
-
-                    # Bezeichnung
-                    dropdown = driver.find_element(By.NAME, 'client_typ')
-                    select_client = Select(dropdown)
-                    select_client.select_by_visible_text('Neuer Client')
-                    sleep(1)
-
-                    # Datum setzen
-                    if date_choice.get() == "Heute":
-                        current_date = datetime.now().strftime('%d.%m.%Y')
-                    else:
-                        current_date = date_entry.get()
-
-                    date_input = driver.find_element(By.NAME, 'datum_client')
-                    date_input.clear()
-                    date_input.send_keys(current_date)
-                    sleep(1)
-
-                    # Monitor
-                    monitor_dropdown = driver.find_element(By.NAME, 'monitor_typ')
-                    select_monitor = Select(monitor_dropdown)
-                    select_monitor.select_by_visible_text('Neuer Monitor')
-                    sleep(1)
-
-                    date_input = driver.find_element(By.NAME, 'datum_monitor')
-                    date_input.clear()
-                    date_input.send_keys(current_date)
-                    sleep(1)
-
-                    # Speicherung
-                    save_button = driver.find_element(By.ID, 'speichern')
-                    save_button.click()
-                    sleep(1)
-
-                    # Erfolgsmeldung
-                    for entry in id_entries:
-                        if entry.get() == id_value:
-                            entry.config(bg="green", relief=tk.SOLID)
-                except NoSuchElementException:
-                    pass
+                actions.send_keys(Keys.ENTER).perform()
+                sleep(1)
 
             except Exception as e:
-                for entry in id_entries:
-                    if entry.get() == id_value:
-                        entry.config(bg="red", relief=tk.SOLID)
-                        break
-    except Exception as e:
-        fehler_label.config(text="Ein Fehler ist aufgetreten. Prüfen Sie Ihre Eingaben und Verbindung.")
-        username_entry.config(bg="red", relief=tk.SOLID)
-        password_entry.config(bg="red", relief=tk.SOLID)
+                print(f"Fehler bei der Verarbeitung: {e}")
+
+       #--------------------------Server-------------------------------------------------------------------------
+try:
+    # Element anhand seines Textinhalts finden        
+    element = driver.find_element(By.XPATH, '//label[text()="SERVER_LABEL"]')
+
+    # Doppelklick ausführen
+    actions = ActionChains(driver)
+    actions.double_click(element).perform()
+    sleep(1)
+
+    # Element für das Dropdown-Menü finden
+    dropdown_menu = driver.find_element(By.NAME, 'SERVER_DROPDOWN_FIELD')
+
+    # Dropdown-Menü in ein Select-Objekt umwandeln
+    select_object = Select(dropdown_menu)
+
+    # Option aus dem Dropdown-Menü auswählen
+    select_object.select_by_visible_text('SERVER_OPTION_PLACEHOLDER')
+    sleep(1)
+
+    #--------------Datum--------------------
+    if date_choice.get() == "Heute":
+        current_date = datetime.now().strftime('%d.%m.%Y')
+    else:
+        current_date = date_entry.get()
+
+    # Element für das Datumseingabefeld finden und das Datum eingeben
+    date_input = driver.find_element(By.NAME, 'DATE_INPUT_FIELD')
+    date_input.clear()  # Vorherigen Inhalt löschen, falls vorhanden
+    date_input.send_keys(current_date)  # Datum eingeben
+
+    # Button klicken
+    button = driver.find_element(By.ID, 'SAVE_BUTTON_ID')
+    button.click()
+    sleep(3)
+
+    #------------------Client (Fall 1)------------------------------------------------------------
+    try:
+        element = driver.find_element(By.XPATH, '//label[text()="CLIENT_LABEL"]')
+        # Doppelklick ausführen
+        actions = ActionChains(driver)
+        actions.double_click(element).perform()
+        sleep(1)
+
+        #----------Anzahl-------------------
+        anzahl_feld = driver.find_element(By.ID, 'CLIENT_QUANTITY_FIELD')
+        current_value = int(anzahl_feld.get_attribute('value'))
+        new_value = current_value + 1
+        anzahl_feld.clear()
+        anzahl_feld.send_keys(str(new_value))
+        sleep(1)
+
+        #----------Bezeichnung-------------------
+        dropdown_menu = driver.find_element(By.NAME, 'CLIENT_TYPE_FIELD')
+        select_object = Select(dropdown_menu)
+        select_object.select_by_visible_text('CLIENT_OPTION_PLACEHOLDER')
+        sleep(1)
+
+        #--------------Datum--------------------
+        date_input = driver.find_element(By.NAME, 'DATE_INPUT_FIELD')
+        date_input.clear()
+        date_input.send_keys(current_date)
+        sleep(1)
+
+        #----------Monitor---------------------
+        dropdown_menu = driver.find_element(By.NAME, 'MONITOR_TYPE_FIELD')
+        select_object = Select(dropdown_menu)
+        select_object.select_by_visible_text('MONITOR_OPTION_PLACEHOLDER')
+        sleep(1)
+
+        date_input = driver.find_element(By.NAME, 'MONITOR_DATE_FIELD')
+        date_input.clear()
+        date_input.send_keys(current_date)
+        sleep(1)
+
+        #-------------Beschaffung--------------------
+        try:
+            dropdown_menu = driver.find_element(By.ID, 'PROCUREMENT_FIELD')
+            select_object = Select(dropdown_menu)
+            select_object.select_by_visible_text('PROCUREMENT_OPTION_PLACEHOLDER')
+            sleep(1)
+        except NoSuchElementException:
+            pass
+
+        button = driver.find_element(By.ID, 'SAVE_BUTTON_ID')
+        button.click()
+        sleep(1)
+
+        #----------USV löschen--------------------
+        try:
+            element = driver.find_element(By.XPATH, '//label[text()="USV_LABEL"]')
+            actions.double_click(element).perform()
+            sleep(3)
+
+            button = driver.find_element(By.ID, 'DELETE_BUTTON_ID')
+            button.click()
+            sleep(2)
+            WebDriverWait(driver, 10).until(EC.alert_is_present())
+            alert = driver.switch_to.alert
+            alert.accept()
+            sleep(3)
+        except NoSuchElementException:
+            pass
+
+        #------------Anbindung auf USB--------------------
+        try:
+            element = driver.find_element(By.XPATH, '//label[text()="CONNECTION_LABEL"]')
+            actions.double_click(element).perform()
+            sleep(1)
+
+            dropdown_menu = driver.find_element(By.NAME, 'CONNECTION_TYPE_FIELD')
+            select_object = Select(dropdown_menu)
+            select_object.select_by_visible_text('USB')
+            sleep(1)
+
+            button = driver.find_element(By.ID, 'SAVE_BUTTON_ID')
+            button.click()
+            sleep(2)
+        except NoSuchElementException:
+            pass
+
+    #------------------------------------Client (Fall 2)------------------------------------
+    except NoSuchElementException:
+        neu_link = driver.find_element(By.XPATH, '//a[text()="NEW_LABEL"]')
+        neu_link.click()
+        sleep(1)
+
+        neu_link = driver.find_element(By.XPATH, '//a[text()="HARDWARE_LABEL"]')
+        neu_link.click()
+        sleep(1)
+
+        button = driver.find_element(By.ID, 'ADD_PC_BUTTON_ID')
+        button.click()
+        sleep(1)
+
+        anzahl_feld = driver.find_element(By.ID, 'CLIENT_QUANTITY_FIELD')
+        anzahl_feld.clear()
+        anzahl_feld.send_keys('1')
+        sleep(1)
+
+        dropdown_menu = driver.find_element(By.NAME, 'CLIENT_TYPE_FIELD')
+        select_object = Select(dropdown_menu)
+        select_object.select_by_visible_text('CLIENT_OPTION_PLACEHOLDER')
+        sleep(1)
+
+        date_input = driver.find_element(By.NAME, 'DATE_INPUT_FIELD')
+        date_input.clear()
+        date_input.send_keys(current_date)
+        sleep(1)
+
+        dropdown_menu = driver.find_element(By.NAME, 'MONITOR_TYPE_FIELD')
+        select_object = Select(dropdown_menu)
+        select_object.select_by_visible_text('MONITOR_OPTION_PLACEHOLDER')
+        sleep(1)
+
+        date_input = driver.find_element(By.NAME, 'MONITOR_DATE_FIELD')
+        date_input.clear()
+        date_input.send_keys(current_date)
+        sleep(1)
+# Aktuelles Datum erhalten und im richtigen Format formatieren
+if date_choice.get() == "Heute":
+    current_date = datetime.now().strftime('%d.%m.%Y')
+else:
+    current_date = date_entry.get()
+
+# Element für das Datumseingabefeld finden und das Datum eingeben
+date_input = driver.find_element(By.NAME, 'DATE_INPUT_FIELD')
+date_input.clear()  # Vorherigen Inhalt löschen, falls vorhanden
+date_input.send_keys(current_date)  # Datum eingeben
+sleep(1)
+
+#-------------Beschaffung----------
+try:
+    # Element für das Dropdown-Menü finden
+    dropdown_menu = driver.find_element(By.ID, 'PROCUREMENT_FIELD_ID')
+
+    # Dropdown-Menü in ein Select-Objekt umwandeln
+    select_object = Select(dropdown_menu)
+
+    # Option aus dem Dropdown-Menü auswählen
+    select_object.select_by_visible_text('PROCUREMENT_OPTION_PLACEHOLDER')
+    sleep(1)
+
+except NoSuchElementException:
+    pass
+
+# Button klicken
+button = driver.find_element(By.ID, 'SAVE_BUTTON_ID')
+button.click()
+sleep(2)
+
+#------------USV löschen--------------------
+try:
+    element = driver.find_element(By.XPATH, '//label[text()="USV_LABEL"]')
+    # Doppelklick ausführen
+    actions = ActionChains(driver)
+    actions.double_click(element).perform()
+    sleep(2)
+
+    # Button klicken
+    button = driver.find_element(By.ID, 'DELETE_BUTTON_ID')
+    button.click()
+    sleep(2)
+    # Auf die Alertbox warten
+    WebDriverWait(driver, 10).until(EC.alert_is_present())
+
+    # Alert akzeptieren (OK klicken)
+    alert = driver.switch_to.alert
+    alert.accept()
+    sleep(2)
+
+except NoSuchElementException:
+    pass
+
+#------------Anbindung auf USB--------------------
+try:
+    # Element anhand seines Textinhalts finden
+    element = driver.find_element(By.XPATH, '//label[text()="CONNECTION_LABEL"]')
+
+    # Doppelklick ausführen
+    actions = ActionChains(driver)
+    actions.double_click(element).perform()
+    sleep(1)
+
+    # Element für das Dropdown-Menü finden
+    dropdown_menu = driver.find_element(By.NAME, 'CONNECTION_TYPE_FIELD')
+
+    # Dropdown-Menü in ein Select-Objekt umwandeln
+    select_object = Select(dropdown_menu)
+
+    # Option auswählen
+    select_object.select_by_visible_text('USB')
+    sleep(1)
+
+    # Button klicken
+    button = driver.find_element(By.ID, 'SAVE_BUTTON_ID')
+    button.click()
+    sleep(2)
+
+except NoSuchElementException:
+    pass
+
+# Erfolgsmeldung anzeigen
+for entry in marktnummern_entries:
+    if entry.get() in marktnummer:
+        entry.config(bg="green", relief=tk.SOLID)
+except Exception as e:
+    # Fehlermeldung anzeigen
+    for entry in marktnummern_entries:
+        if entry.get() == marktnummer:
+            entry.config(bg="red", relief=tk.SOLID)
+            break
 
 # GUI erstellen
 root = tk.Tk()
-root.title("App Interface")
+root.title("APP_TITLE")
 
 # Labels
 tk.Label(root, text="Benutzername:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
@@ -199,35 +401,52 @@ password_entry = tk.Entry(root, show="*")
 username_entry.grid(row=0, column=1, padx=5, pady=5)
 password_entry.grid(row=1, column=1, padx=5, pady=5)
 
-# Fehler- und Erfolgsmeldungslabels
+# Fehler- und Erfolgsmeldungslabels erstellen
 fehler_label = tk.Label(root, text="", fg="red", wraplength=300)
 fehler_label.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+erfolg_label = tk.Label(root, text="", fg="green", wraplength=300)
+erfolg_label.grid(row=5, column=0, columnspan=2, padx=10, pady=10)
 
-# Eingabefelder für IDs
-tk.Label(root, text="IDs:").grid(row=5, column=0, padx=5, pady=5, sticky="w")
-id_entries = []
+# Eingabefelder für Marktnummern
+tk.Label(root, text="Marktnummern:").grid(row=5, column=0, padx=5, pady=5, sticky="w")
+marktnummern_entries = []
 for i in range(5):
     entry = tk.Entry(root)
     entry.grid(row=i+5, column=1, padx=5, pady=5)
-    id_entries.append(entry)
+    marktnummern_entries.append(entry)
 
-# Passwort-Anzeige-Toggle
+# Fehler- und Erfolgsmeldungslabels erstellen
+fehler_label = tk.Label(root, text="", fg="red", wraplength=300)
+fehler_label.grid(row=len(marktnummern_entries)+5, column=0, columnspan=2, padx=10, pady=10)
+
+# Schaltfläche für Passwort-Anzeige hinzufügen
 show_password_button = tk.Button(root, text="Passwort anzeigen", command=toggle_password_visibility)
 show_password_button.grid(row=1, column=2, padx=5, pady=5)
 
 def on_submit():
+    # Neues Fenster für die Ladeanimation erstellen
     loading_window = tk.Toplevel(root)
     loading_window.title("Bitte warten")
-    loading_label = tk.Label(loading_window, text="Die Verarbeitung läuft. Bitte das Programm nicht schließen.")
+
+    # Nachricht mit Ladeanimation
+    loading_label = tk.Label(loading_window, text="Die Märkte werden aktualisiert. Bitte warten.")
     loading_label.pack(padx=20, pady=10)
-    loading_icon = tk.Label(loading_window, text="Lädt...")
+
+    loading_icon = tk.Label(loading_window, text="Loading...")
     loading_icon.pack(pady=10)
+
     loading_window.update()
+
+    # Submit-Funktion aufrufen
     submit_form()
+
+    # Nach Abschluss des Vorgangs das Laden-Fenster schließen
     loading_window.destroy()
 
-# Absenden-Button
+# Submit-Button
 submit_button = tk.Button(root, text="Absenden", command=on_submit)
-submit_button.grid(row=len(id_entries)+6, column=0, columnspan=2, pady=10)
+submit_button.grid(row=len(marktnummern_entries)+6, column=0, columnspan=2, pady=10)
 
 root.mainloop()
+
+
